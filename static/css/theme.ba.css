@@ -1,0 +1,253 @@
+/* ═══════════════════════════════════════════
+   Pixiv Toolbox · V4 自然通透科技重构
+   ═══════════════════════════════════════════ */
+
+:root {
+    --arona-cyan: #00BFFF;
+    --arona-deep-blue: #0F2540;
+    --arona-white: #FFFFFF;
+    --arona-sky: #E1F2FB;
+    
+    --primary: var(--arona-cyan);
+    --primary-strong: #0099CC;
+    --bg: var(--arona-sky);
+    --text-main: var(--arona-deep-blue);
+    --text: var(--arona-deep-blue);
+    --card-bg: rgba(255, 255, 255, 0.92);
+    
+    /* 回归自然圆润的现代质感 */
+    --radius: 8px;
+    --radius-lg: 16px;
+    --radius-sm: 4px;
+    --glass-shadow: 0 10px 40px rgba(0, 191, 255, 0.12);
+}
+
+/* 全局字体切换为极具现代二次元高级游戏UI质感、科技几何感的 'Outfit' 搭配 'Noto Sans SC' */
+body, input, select, button, textarea, .tab-btn-text, .btn-sub {
+    font-family: 'Outfit', 'Noto Sans SC', 'Microsoft YaHei UI', sans-serif !important;
+}
+
+/* 1. 梦幻星空背景底色 - 壁纸由 index.html 内联加载以配合动态版本号破除缓存 */
+html {
+    min-height: 100vh;
+}
+body {
+    background: transparent !important;
+    color: var(--arona-deep-blue);
+    overflow-x: hidden;
+}
+
+/* 彻底移除旧版所有花里胡哨的网格和斜角 */
+body::before, body::after, .ba-deco-bg {
+    display: none !important;
+}
+
+canvas#arona-bg {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2; /* 位于 html 背景图上层，位于 body 内容物下层 */
+    pointer-events: none;
+}
+
+/* 2. 卡片极致透明毛玻璃化 (Ice Glassmorphism) */
+.card {
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    background: rgba(255, 255, 255, 0.42) !important;
+    box-shadow: 0 24px 60px rgba(0, 15, 50, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* 3. 标题设计 (扁平化高端游戏UI排版，极致可读性与科技感) */
+header h1 {
+    font-style: normal !important;
+    font-weight: 800 !important;
+    letter-spacing: 2px !important;
+    font-size: 2.8rem !important;
+    font-family: 'Outfit', sans-serif !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background: none !important;
+    text-shadow: 0 0 15px rgba(0, 191, 255, 0.45) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+}
+header h1 .kanji {
+    display: inline-block !important;
+    background: rgba(0, 191, 255, 0.15) !important;
+    border: 1.5px solid rgba(0, 191, 255, 0.4) !important;
+    color: #00BFFF !important;
+    -webkit-text-fill-color: #00BFFF !important;
+    padding: 2px 12px !important;
+    font-size: 0.85rem !important;
+    border-radius: 6px !important;
+    letter-spacing: 3px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    vertical-align: middle !important;
+    margin-top: 0 !important;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.15) !important;
+    text-shadow: none !important;
+}
+header p {
+    color: rgba(255, 255, 255, 0.75) !important;
+    text-shadow: 0 2px 8px rgba(0, 15, 40, 0.5) !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 2px !important;
+    margin-top: 14px !important;
+}
+.deco-line {
+    background: linear-gradient(90deg, transparent, rgba(0, 191, 255, 0.7), transparent) !important;
+    height: 2px !important;
+}
+.card h2 {
+    font-style: normal !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.5px !important;
+    font-family: var(--font-display) !important;
+    color: var(--arona-deep-blue) !important;
+    border-bottom: 2px solid rgba(0, 191, 255, 0.15) !important;
+}
+.card h2::after {
+    background: var(--arona-cyan) !important;
+    width: 40px !important;
+    height: 3px !important;
+    bottom: -2.5px !important;
+    border-radius: 2px;
+}
+
+/* 4. 输入框平滑化 */
+.form-group input,
+.form-group select,
+.custom-select-trigger,
+.custom-options {
+    border: 2px solid rgba(0, 191, 255, 0.15) !important;
+    border-radius: var(--radius) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+    font-style: normal !important;
+}
+.form-group input:focus,
+.custom-select-wrapper.open .custom-select-trigger {
+    border-color: var(--arona-cyan) !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+    border-left: 2px solid var(--arona-cyan) !important; /* 修正为标准边框厚度 */
+    padding-left: 16px !important; 
+}
+
+/* 5. 按钮发光胶囊形 */
+.btn-primary {
+    background: linear-gradient(135deg, #33CCFF, #0099CC) !important;
+    border-radius: 24px !important;
+    clip-path: none !important;
+    box-shadow: 0 6px 20px rgba(0, 191, 255, 0.3) !important;
+    font-style: normal !important;
+    letter-spacing: 1px !important;
+}
+.btn-primary:hover {
+    box-shadow: 0 10px 24px rgba(0, 191, 255, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 6. Tabs 标签页微圆角毛玻璃 */
+.tabs {
+    background: transparent !important;
+    box-shadow: none !important;
+    gap: 12px !important;
+}
+.tab-btn {
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    clip-path: none !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: var(--arona-deep-blue) !important;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.85) !important;
+    transform: translateY(-1px) !important;
+}
+.tab-btn .tab-btn-text {
+    color: var(--arona-deep-blue) !important;
+}
+.tab-btn .tab-icon {
+    color: var(--arona-deep-blue) !important;
+    opacity: 0.8 !important;
+}
+.tab-btn .btn-sub {
+    color: rgba(15, 37, 64, 0.55) !important;
+}
+.tab-btn.active {
+    background: var(--arona-cyan) !important;
+    border-color: var(--arona-cyan) !important;
+    box-shadow: 0 8px 24px rgba(0, 191, 255, 0.3) !important;
+    color: #fff !important;
+}
+.tab-btn.active .tab-btn-text, .tab-btn.active .tab-icon {
+    color: #fff !important;
+    opacity: 1 !important;
+}
+.tab-btn.active .btn-sub {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* 7. Checkbox 柔化 */
+.check-box {
+    border-radius: 6px !important;
+    border-color: rgba(0, 191, 255, 0.3) !important;
+}
+.check-group input:checked + .check-box {
+    background: var(--arona-cyan) !important;
+    border-color: var(--arona-cyan) !important;
+}
+.toggle-track {
+    border-radius: 13px !important;
+}
+.toggle-track::after {
+    border-radius: 50% !important;
+}
+
+/* 8. 修复深层面板圆角 */
+.gallery-card {
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(0, 191, 255, 0.06) !important;
+}
+.badge-r18 {
+    border-radius: 6px !important;
+}
+.result-list {
+    border-radius: 12px !important;
+    backdrop-filter: blur(10px) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* 9. 全局滚动条与控制区美化 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(4, 11, 24, 0.15);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 191, 255, 0.35);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 191, 255, 0.65);
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}

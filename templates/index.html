@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixiv Toolbox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap"></noscript>
+    <!-- 关键CSS同步加载 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css', v=asset_version) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css', v=asset_version) }}">
+    <!-- 非关键CSS异步加载 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css', v=asset_version) }}" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.toast.css', v=asset_version) }}" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.progress.css', v=asset_version) }}" media="print" onload="this.media='all'">
+    <!-- 核心主题同步加载，确保背景透明度与UI系统立即生效，防止闪烁/加载失败 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.ba.css', v=asset_version) }}">
+    <!-- 动态时间戳壁纸注入，强力缓存击穿，确保每次图片生成都能立即呈现在前端 -->
+    <style>
+        html {
+            background: url("{{ url_for('static', filename='images/arona-bg.png', v=asset_version) }}") no-repeat center center fixed !important;
+            background-size: cover !important;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="arona-bg" aria-hidden="true"></canvas>
+    <div class="container">
+        <header>
+            <h1>Pixiv Toolbox<span class="kanji">検索 · 保存 · 管理</span></h1>
+            <p>获取令牌 · API 连通性验证 · 标签作品检索 · 高清大图保存</p>
+            <div class="deco-line" aria-hidden="true"></div>
+        </header>
+
+        <div class="tabs" role="tablist" aria-label="主要功能切换">
+            <button class="tab-btn active" type="button" data-target="fetch" id="tab-fetch">
+                <svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                <span class="tab-btn-text">获取令牌<span class="btn-sub">Get Token</span></span>
+            </button>
+            <button class="tab-btn" type="button" data-target="test" id="tab-test">
+                <svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span class="tab-btn-text">连通测试<span class="btn-sub">Connect Test</span></span>
+            </button>
+            <button class="tab-btn" type="button" data-target="search" id="tab-search">
+                <svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span class="tab-btn-text">搜索预览<span class="btn-sub">Search Preview</span></span>
+            </button>
+        </div>
+
+        <!-- Tab 1: 获取 Token -->
+        <section id="panel-fetch" class="tab-panel active">
+            <div class="card">
+                <h2>获取 Pixiv 凭证 <span class="sub-title-jp">REFRESH TOKEN / トークン取得</span></h2>
+                <p class="card-desc">
+                    通过 Playwright 自动打开浏览器登录 Pixiv 并截取 OAuth refresh_token。若遇到人机验证码，请确保勾选"显示浏览器窗口"以在弹出的界面上进行手动处理。
+                </p>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="fi-username">Pixiv 账号</label>
+                        <input type="text" id="fi-username" placeholder="邮箱或手机号" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="fi-password">Pixiv 密码</label>
+                        <input type="password" id="fi-password" placeholder="密码" autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="fi-proxy">代理地址</label>
+                    <input type="text" id="fi-proxy" placeholder="留空则直连；例如 http://127.0.0.1:7890" value="{{ auto_proxy }}">
+                    <div class="hint">留空则直连；支持 http://、socks4://、socks5://，暂不支持 https://。</div>
+                </div>
+                <label class="check-group">
+                    <input type="checkbox" id="fi-show-browser" checked>
+                    <span class="check-box" aria-hidden="true"></span>
+                    <span class="check-label">显示浏览器窗口（推荐，便于手动处理验证码）</span>
+                </label>
+                <button class="btn btn-primary" type="button" id="btn-fetch">
+                    <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    开始获取
+                </button>
+                <div id="fetch-status" aria-live="polite"></div>
+                <div id="fetch-console" class="console" role="log" aria-live="polite" aria-label="获取令牌输出日志" style="display:none;"></div>
+
+                <div id="fetch-result" class="result-card" aria-live="polite">
+                    <h3>凭证获取成功</h3>
+                    <div class="result-field">
+                        <label for="res-refresh">Refresh Token（长期有效）</label>
+                        <div class="result-value">
+                            <input type="text" id="res-refresh" readonly>
+                            <button class="copy-btn" type="button" data-copy-target="res-refresh">复制</button>
+                        </div>
+                    </div>
+                    <div class="result-field">
+                        <label for="res-access">Access Token（临时凭证）</label>
+                        <div class="result-value">
+                            <input type="text" id="res-access" readonly>
+                            <button class="copy-btn" type="button" data-copy-target="res-access">复制</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 2: 连通测试 -->
+        <section id="panel-test" class="tab-panel">
+            <div class="card">
+                <h2>API 连通测试 <span class="sub-title-jp">CONNECTIVITY TEST / 接続テスト</span></h2>
+                <p class="card-desc">
+                    按顺序依次执行：API 登录授权测试 ➜ 排行榜列表拉取 ➜ 指定标签搜索 ➜ R18作品过滤 ➜ 随机作品图片下载测试（下载测试图将保存至本地 <code>downloads</code> 目录）。
+                </p>
+                <div class="form-group">
+                    <label for="ti-token">Refresh Token</label>
+                    <input type="text" id="ti-token" placeholder="粘贴您的 refresh_token" autocomplete="off">
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label for="ti-proxy">代理地址</label>
+                        <input type="text" id="ti-proxy" placeholder="留空则直连；例如 http://127.0.0.1:7890" value="{{ auto_proxy }}">
+                        <div class="hint">支持 http://、socks4://、socks5://。</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ti-tag">测试搜索标签</label>
+                        <input type="text" id="ti-tag" placeholder="原神" value="原神">
+                    </div>
+                    <div class="form-group toggle-field">
+                        <span class="empty-label" aria-hidden="true">&nbsp;</span>
+                        <label class="toggle-group">
+                            <input type="checkbox" id="ti-r18">
+                            <span class="toggle-track" aria-hidden="true"></span>
+                            <span class="toggle-label">允许 R18</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" type="button" id="btn-test">
+                    <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    开始连通测试
+                </button>
+                <div id="test-status" aria-live="polite"></div>
+                <div id="test-console" class="console" role="log" aria-live="polite" aria-label="连通测试输出日志" style="display:none;"></div>
+
+                <div id="test-result" class="result-card" aria-live="polite">
+                    <h3>全部测试项通过</h3>
+                    <div class="summary-grid" id="test-summary"></div>
+                    <div id="test-download-info" style="margin-top:16px;font-size:0.88rem;color:var(--text-dim);line-height:1.6;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: 搜索预览 -->
+        <section id="panel-search" class="tab-panel">
+            <div class="card">
+                <h2>插画搜索与大图下载 <span class="sub-title-jp">SEARCH & PREVIEW / イラスト検索</span></h2>
+                <p class="card-desc">
+                    直接搜索 Pixiv 作品标签进行本地快速预览，支持多种精细化筛选条件。搜索框留空时将拉取今日最新的 Pixiv 官方排行榜单。
+                </p>
+                <div class="form-group">
+                    <label for="si-token">Refresh Token</label>
+                    <input type="text" id="si-token" placeholder="粘贴您的 refresh_token" autocomplete="off">
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label for="si-proxy">代理地址</label>
+                        <input type="text" id="si-proxy" placeholder="如 socks5://127.0.0.1:10808；留空直连" value="{{ auto_proxy }}">
+                        <div class="hint">支持 http://、socks4://、socks5://。</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="si-tag">搜索标签（留空默认拉取排行榜）</label>
+                        <input type="text" id="si-tag" placeholder="输入标签词如：原神 / 碧蓝航线 / fate">
+                    </div>
+                    <div class="form-group toggle-field">
+                        <span class="empty-label" aria-hidden="true">&nbsp;</span>
+                        <label class="toggle-group">
+                            <input type="checkbox" id="si-r18">
+                            <span class="toggle-track" aria-hidden="true"></span>
+                            <span class="toggle-label">允许 R18</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label for="si-target">匹配方式</label>
+                        <select id="si-target">
+                            <option value="partial_match_for_tags">标签部分匹配</option>
+                            <option value="exact_match_for_tags">标签完全匹配</option>
+                            <option value="title_and_caption">标题与简介</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="si-sort">结果排序</label>
+                        <select id="si-sort">
+                            <option value="date_desc">最新发布优先</option>
+                            <option value="date_asc">最旧发布优先</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="si-duration">发布时间段</label>
+                        <select id="si-duration">
+                            <option value="">不限时间</option>
+                            <option value="within_last_day">最近一天内</option>
+                            <option value="within_last_week">最近一周内</option>
+                            <option value="within_last_month">最近一月内</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="si-page-size">返回数量</label>
+                        <input type="number" id="si-page-size" min="1" max="30" value="20">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="si-ranking-mode">排行榜模式（标签留空时有效）</label>
+                        <select id="si-ranking-mode">
+                            <option value="day">综合日榜</option>
+                            <option value="week">综合周榜</option>
+                            <option value="month">综合月榜</option>
+                            <option value="day_male">受男性欢迎榜</option>
+                            <option value="day_female">受女性欢迎榜</option>
+                            <option value="week_original">原创周榜</option>
+                            <option value="week_rookie">新人榜</option>
+                            <option value="day_manga">漫画榜</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="si-min-bookmarks">最低收藏数（仅搜索标签时生效）</label>
+                        <input type="number" id="si-min-bookmarks" min="0" placeholder="例如输入 1000 过滤低热度作品">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="si-download-quality">下载质量</label>
+                        <select id="si-download-quality">
+                            <option value="auto">自动，原图优先</option>
+                            <option value="original">原图</option>
+                            <option value="large">大图</option>
+                            <option value="medium">中图</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" type="button" id="btn-search">
+                    <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    开始搜索
+                </button>
+                <div id="search-status" aria-live="polite"></div>
+                <div id="search-console" class="console" role="log" aria-live="polite" aria-label="搜索过程日志" style="display:none;"></div>
+
+                <div id="search-toolbar" class="result-toolbar" style="display:none;">
+                    <div id="search-note" class="result-note"></div>
+                    <div class="view-toggle" role="group" aria-label="结果展示模式">
+                        <button id="view-list" type="button" class="active" aria-pressed="true">文字列表</button>
+                        <button id="view-grid" type="button" aria-pressed="false">图卡画廊</button>
+                    </div>
+                </div>
+
+                <div id="search-list" class="result-list" style="display:none;"></div>
+                <div id="search-gallery" class="gallery" style="display:none;"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <button class="close-btn" type="button" aria-label="关闭预览">✕</button>
+        <img id="lb-img" src="" alt="">
+        <div class="lb-info" id="lb-info"></div>
+    </div>
+
+    <script type="module" src="{{ url_for('static', filename='js/main.js', v=asset_version) }}"></script>
+</body>
+</html>

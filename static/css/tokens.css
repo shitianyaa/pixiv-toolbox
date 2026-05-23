@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════
+   蔚蓝档案 · Blue Archive 设计令牌
+   ═══════════════════════════════════════════ */
+
+:root {
+    /* 背景 */
+    --bg:          #f0f6ff;
+    --bg-soft:     #dce9f8;
+    --bg-deep:     #0b1a2e;
+
+    /* 卡片 & 面板 */
+    --card-bg:     rgba(255, 255, 255, 0.82);
+    --card-border: rgba(37, 99, 235, 0.12);
+    --card-shadow: rgba(37, 99, 235, 0.10);
+    --panel:       rgba(255, 255, 255, 0.82);
+    --panel-strong: #ffffff;
+
+    /* 品牌色 */
+    --primary:        #2563eb;
+    --primary-strong: #1d4ed8;
+    --primary-light:  #60a5fa;
+    --primary-glow:   rgba(37, 99, 235, 0.25);
+    --secondary:      #06b6d4;
+    --secondary-light: #67e8f9;
+    --accent:         #f59e0b;
+    --accent-light:   #fbbf24;
+
+    /* 语义色 */
+    --success:  #10b981;
+    --danger:   #ef4444;
+    --warning:  #f59e0b;
+
+    /* 文字 */
+    --text:      #1e293b;
+    --text-soft: #475569;
+    --text-dim:  #94a3b8;
+    --text-inv:  #f8fafc;
+    --text-main: #1e293b;
+
+    /* 间距 */
+    --radius:    12px;
+    --radius-lg: 20px;
+    --radius-sm: 8px;
+
+    /* 字体 */
+    --font:        'Noto Sans SC', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif;
+    --font-display: 'Noto Sans SC', 'Microsoft YaHei UI', sans-serif;
+    --font-hero:   'Noto Sans SC', 'Microsoft YaHei UI', sans-serif;
+    --mono:        'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+    /* 阴影 */
+    --shadow-sm:    0 2px 8px rgba(37, 99, 235, 0.06);
+    --shadow-md:    0 8px 24px rgba(37, 99, 235, 0.10);
+    --shadow-lg:    0 16px 48px rgba(37, 99, 235, 0.14);
+    --shadow-glow:  0 0 20px rgba(37, 99, 235, 0.20);
+    --glass-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    body::before { animation: none !important; }
+    header h1, header h1 .kanji, header p { animation: none !important; opacity: 1 !important; }
+    .deco-line { animation: none !important; width: 80px; opacity: 1; }
+    .tabs { animation: none !important; }
+    .card { animation: none !important; animation-play-state: paused !important; }
+    .dot.pulse { animation: none !important; }
+    .tab-panel { animation: none !important; }
+    .tab-panel.active { animation: none !important; }
+    .result-card { animation: none !important; }
+    .gallery-card { transition: none !important; }
+    .btn { transition: none !important; }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .tabs { background: rgba(255, 255, 255, 0.92) !important; }
+    .card { background: rgba(255, 255, 255, 0.95) !important; }
+    .custom-options { background: rgba(255, 255, 255, 0.98) !important; }
+    .console { background: #0f1d35 !important; }
+    .lightbox { background: rgba(10, 22, 40, 0.97) !important; }
+    .result-list { background: rgba(255, 255, 255, 0.95) !important; }
+    .btn-primary { backdrop-filter: none !important; }
+}
+
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible) {
+    outline: none;
+}
