@@ -802,6 +802,24 @@
     gap: 4px;
 }
 .result-meta .r18-tag::before { content: '⚠'; }
+.result-meta .size-meta {
+    color: var(--primary);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+.size-label {
+    font-variant-numeric: tabular-nums;
+}
+.size-label.multi-page {
+    color: var(--text-dim);
+    font-style: italic;
+}
+.gallery-card .meta .size-meta {
+    color: var(--primary);
+    font-weight: 600;
+}
 
 .result-actions {
     display: flex;

@@ -96,6 +96,25 @@ async def _fetch_image(image_url: str, proxy: str):
             return await res.read(), res.content_type
 
 
+async def _fetch_image_stream(image_url: str, proxy: str, on_progress=None):
+    """Fetch image with optional progress callback: on_progress(bytes_downloaded, total_bytes)."""
+    headers = {"User-Agent": "Mozilla/5.0", "Referer": "https://www.pixiv.net/"}
+    async with PixivClient(proxy=proxy or None, timeout=30) as session:
+        async with session.get(image_url, headers=headers) as res:
+            if res.status != 200:
+                raise RuntimeError(f"HTTP {res.status}")
+            total = int(res.headers.get("Content-Length", 0))
+            chunks = []
+            downloaded = 0
+            async for chunk in res.content.iter_chunked(65536):
+                chunks.append(chunk)
+                downloaded += len(chunk)
+                if on_progress:
+                    on_progress(downloaded, total)
+            body = b"".join(chunks)
+            return body, res.content_type
+
+
 def _image_ext_from_url(image_url: str) -> str:
     ext = Path(urlparse(image_url).path).suffix.lower()
     return ext if ext in IMAGE_EXTENSIONS else ".jpg"
@@ -135,7 +154,7 @@ def _image_candidates(illust: dict, download_quality: str = "auto"):
 
 
 async def _download_illust_original(
-    illust: dict, proxy: str, download_quality: str = "auto"
+    illust: dict, proxy: str, download_quality: str = "auto", on_progress=None
 ):
     download_quality = normalize_download_quality(download_quality)
     illust_id = illust.get("id", "unknown")
@@ -158,7 +177,13 @@ async def _download_illust_original(
         selected_quality = ""
         for quality, image_url in candidates:
             try:
-                body, _content_type = await _fetch_image(image_url, proxy)
+                def _on_page_progress(downloaded, total):
+                    if on_progress:
+                        on_progress(page_index, page_count, downloaded, total)
+
+                body, _content_type = await _fetch_image_stream(
+                    image_url, proxy, _on_page_progress
+                )
                 selected_url = image_url
                 selected_quality = quality
                 break
@@ -412,6 +437,12 @@ def api_search_preview():
     }:
         ranking_mode = "day"
     min_bookmarks = optional_int(data.get("min_bookmarks"))
+    try:
+        download_quality = normalize_download_quality(
+            data.get("download_quality", "auto")
+        )
+    except ValueError:
+        download_quality = "auto"
 
     if not token:
         return jsonify({"ok": False, "error": "请输入 refresh_token"}), 400
@@ -456,6 +487,18 @@ def api_search_preview():
             img_url = (i.get("image_urls") or {}).get("large") or (
                 i.get("image_urls") or {}
             ).get("medium", "")
+            # 用于大小查询的 URL：按用户选择的下载质量取
+            meta_pages = i.get("meta_pages") or []
+            if meta_pages:
+                first_page_urls = meta_pages[0].get("image_urls") or {}
+            else:
+                first_page_urls = {
+                    "original": (i.get("meta_single_page") or {}).get("original_image_url"),
+                    "large": (i.get("image_urls") or {}).get("large"),
+                    "medium": (i.get("image_urls") or {}).get("medium"),
+                }
+            candidates = _pick_quality_candidates(first_page_urls, download_quality)
+            download_url = candidates[0][1] if candidates else img_url
             results.append(
                 {
                     "id": i.get("id"),
@@ -463,6 +506,7 @@ def api_search_preview():
                     "author": (i.get("user") or {}).get("name", ""),
                     "author_id": (i.get("user") or {}).get("id"),
                     "image_url": img_url,
+                    "download_url": download_url,
                     "preview_url": f"/api/proxy-image?url={quote(img_url, safe='')}&proxy={quote(proxy, safe='')}",
                     "x_restrict": int(i.get("x_restrict", 0)),
                     "width": i.get("width"),
@@ -502,7 +546,7 @@ def api_search_preview():
 
 @downloader_bp.route("/api/download-illust", methods=["POST"])
 def api_download_illust():
-    """下载指定作品图片到本地并返回路径。"""
+    """下载指定作品图片到本地，通过 SSE 推送进度。"""
     data = request.get_json(force=True)
     token = data.get("refresh_token", "").strip()
     try:
@@ -511,33 +555,56 @@ def api_download_illust():
             data.get("download_quality", "auto")
         )
     except ValueError as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+        return _sse_error(str(e))
     illust_id = data.get("illust_id")
 
     if not token or not illust_id:
-        return jsonify({"ok": False, "error": "缺少参数"}), 400
+        return _sse_error("缺少参数")
 
-    try:
-        if sys.platform == "win32":
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    queue: Queue = Queue()
 
-        async def _download():
-            api = _make_api(proxy)
+    async def run_download(q: Queue):
+        api = _make_api(proxy)
+        try:
             await api.login(refresh_token=token)
-            detail = await api.illust_detail(illust_id)
-            illust = detail.get("illust", {})
-            try:
-                download_info = await _download_illust_original(
-                    illust, proxy, download_quality
-                )
-            except Exception as e:
-                return {"ok": False, "error": str(e)}
-            return {"ok": True, **download_info}
+        except Exception as e:
+            q.put({"type": "error", "msg": f"登录失败: {e!r}"})
+            q.put({"type": "done"})
+            return
 
-        result = asyncio.run(_download())
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        try:
+            detail = await api.illust_detail(illust_id)
+        except Exception as e:
+            q.put({"type": "error", "msg": f"获取作品详情失败: {e!r}"})
+            q.put({"type": "done"})
+            return
+
+        illust = detail.get("illust", {})
+        q.put({"type": "log", "msg": f"开始下载作品 {illust_id}…"})
+
+        def on_progress(page_index, page_count, downloaded, total):
+            q.put({
+                "type": "progress",
+                "page": page_index + 1,
+                "page_count": page_count,
+                "bytes": downloaded,
+                "total_bytes": total,
+            })
+
+        try:
+            download_info = await _download_illust_original(
+                illust, proxy, download_quality, on_progress=on_progress
+            )
+        except Exception as e:
+            q.put({"type": "error", "msg": f"下载失败: {e!r}"})
+            q.put({"type": "done"})
+            return
+
+        q.put({"type": "result", "data": {"ok": True, **download_info}})
+        q.put({"type": "done"})
+
+    _run_async_worker(run_download, queue)
+    return Response(_sse_stream(queue, timeout=120), mimetype="text/event-stream")
 
 
 # ── 图片代理 ─────────────────────────────────────────────────
@@ -566,6 +633,38 @@ def api_proxy_image():
         )
     except Exception as e:
         return Response(f"image proxy failed: {e}", status=502)
+
+
+# ── 图片大小查询 ──────────────────────────────────────────────
+
+
+async def _head_image(image_url: str, proxy: str):
+    headers = {"User-Agent": "Mozilla/5.0", "Referer": "https://www.pixiv.net/"}
+    async with PixivClient(proxy=proxy or None, timeout=10) as session:
+        async with session.head(image_url, headers=headers, allow_redirects=True) as res:
+            size = res.headers.get("Content-Length")
+            return int(size) if size else None
+
+
+@downloader_bp.route("/api/image-size")
+def api_image_size():
+    """HEAD 请求获取图片文件大小（Content-Length）。"""
+    image_url = request.args.get("url", "").strip()
+    try:
+        proxy = normalize_proxy(request.args.get("proxy", ""))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    if not image_url.startswith(("https://i.pximg.net/", "https://i-f.pximg.net/")):
+        return jsonify({"error": "invalid image url"}), 400
+
+    try:
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        size_bytes = asyncio.run(_head_image(image_url, proxy))
+        return jsonify({"size_bytes": size_bytes})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 
 # ── 静态文件服务 ──────────────────────────────────────────────

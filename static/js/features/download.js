@@ -1,3 +1,5 @@
+import { SSEClient } from '../core/sse-client.js';
+import { addDownloadEntry } from '../ui/download-panel.js';
 import { toast } from '../ui/toast.js';
 
 const QUALITY_LABELS = {
@@ -23,39 +25,67 @@ export async function downloadIllust(illustId, btn) {
     const token = (document.getElementById('si-token')?.value || '').trim();
     const proxy = (document.getElementById('si-proxy')?.value || '').trim();
     const downloadQuality = (document.getElementById('si-download-quality')?.value || 'auto').trim();
-    const originalText = btn.textContent;
+
     btn.disabled = true;
     btn.innerHTML = '<span class="progress-spinner" aria-hidden="true"></span> 下载中';
     btn.setAttribute('aria-busy', 'true');
 
-    try {
-        const resp = await fetch('/api/download-illust', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                refresh_token: token,
-                proxy,
-                illust_id: illustId,
-                download_quality: downloadQuality,
-            }),
-        });
-        const data = await resp.json();
-        if (data.ok) {
+    let client = null;
+
+    // Add entry to floating panel
+    const entry = addDownloadEntry(illustId, () => {
+        if (client) client.abort();
+    });
+
+    client = new SSEClient({
+        url: '/api/download-illust',
+        payload: {
+            refresh_token: token,
+            proxy,
+            illust_id: illustId,
+            download_quality: downloadQuality,
+        },
+        timeout: 120000,
+        exclusive: false,
+    });
+
+    client
+        .on('message', (msg) => {
+            if (msg.type === 'progress') {
+                entry.update(msg.bytes, msg.total_bytes);
+            }
+        })
+        .on('result', (data) => {
+            entry.done();
             btn.textContent = '✓ ' + downloadSummary(data);
             btn.title = downloadPaths(data).join('\n');
             btn.classList.add('success');
             btn.removeAttribute('aria-busy');
             toast.success(`插画 ${illustId} 下载完成`);
-        } else {
-            btn.textContent = '重试';
-            btn.disabled = false;
-            btn.removeAttribute('aria-busy');
-            toast.error('下载未成功: ' + (data.error || '未知错误'));
-        }
-    } catch (e) {
-        btn.textContent = originalText || '重试';
-        btn.disabled = false;
-        btn.removeAttribute('aria-busy');
-        toast.error('下载异常: ' + e.message);
-    }
+        })
+        .on('error', (err) => {
+            if (err.type === 'aborted') {
+                entry.remove();
+                btn.textContent = '下载';
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+                btn.classList.remove('success');
+                toast('下载已取消');
+            } else {
+                entry.error('✗ 失败');
+                btn.textContent = '重试';
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+                toast.error('下载失败: ' + (err.message || '未知错误'));
+            }
+        })
+        .on('done', (_data, ok) => {
+            if (ok) {
+                setTimeout(() => {
+                    btn.disabled = false;
+                }, 2000);
+            }
+        });
+
+    await client.start();
 }

@@ -8,3 +8,4 @@ downloads/
 dist/
 build/
 .claude/
+.playwright-cli/
