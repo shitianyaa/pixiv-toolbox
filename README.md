@@ -25,14 +25,14 @@
 
 What sets it apart:
 
-- **Aesthetics first** — a Blue Archive-inspired theme with Arona artwork, sakura accents, and a custom canvas background, instead of yet another bootstrap dashboard.
+- **Aesthetics first** — a Blue Archive-inspired theme with Arona artwork, cyan palette, and a custom canvas background, instead of yet another bootstrap dashboard.
 - **One-stop workflow** — login, test, search, and download all live in a single page; no CLI gymnastics, no copy-pasting tokens across scripts.
 - **Zero-config networking** — local proxies (Clash, V2Ray, Shadowsocks) are auto-detected; HTTP / SOCKS4 / SOCKS5 all supported.
 
 ## ✨ Features
 
 - 🔐 **One-click OAuth login** — Playwright drives a real browser to capture your Pixiv `refresh_token`; captcha-friendly with optional visible window.
-- 🎌 **Anime-inspired UI** — Blue Archive themed by default, with a sakura alt-theme, animated canvas background, and bilingual JP/CN typography.
+- 🎌 **Anime-inspired UI** — Blue Archive themed by default, with animated canvas background and bilingual JP/CN typography.
 - 🔍 **Powerful tag search** — filter by date range, ranking mode, sort order, minimum bookmarks, and R-18 toggle.
 - 🖼️ **Gallery & list preview** — switch between card grid and structured list views in one click.
 - 📥 **Multi-quality download** — pick original / large / medium; downloads go to `downloads/` by default.
@@ -124,24 +124,22 @@ pixiv-toolbox/
 | Pixiv API | [pixivpy-async](https://github.com/Mikubill/pixivpy-async) |
 | Browser automation | [Playwright](https://playwright.dev/python/) |
 | Frontend | Vanilla HTML / CSS / JavaScript (ES modules), Noto Sans SC + Outfit |
-| Theming | CSS custom properties, swappable themes (`theme.ba.css`, `theme.sakura.css`) |
+| Theming | CSS custom properties (`theme.ba.css`) |
 
-## 🎨 Themes
+## 🎨 Theme
 
-Pixiv Toolbox ships with **two themes** out of the box:
+Pixiv Toolbox uses a **Blue Archive** inspired theme by default — Arona background, blue/cyan palette, JP kanji accents.
 
-- **Blue Archive** (default) — Arona background, blue/cyan palette, JP kanji accents
-- **Sakura** — soft pink / cream palette, ideal for daylight use
-
-Themes are plain CSS files under `static/css/`. PRs for new themes (Genshin, Honkai: Star Rail, Arknights…) are very welcome.
+The theme is defined in `static/css/theme.ba.css`. PRs for new themes (Genshin, Honkai: Star Rail, Arknights…) are very welcome.
 
 ## 🤝 Contributing
 
-Issues, PRs, and theme contributions are welcome. If you find a bug or have a feature idea:
+**欢迎提交 Issue 和 Pull Request！** 无论是 Bug 反馈、功能建议还是主题贡献，都非常欢迎。
 
-1. Open an [Issue](https://github.com/shitianyaa/pixiv-toolbox/issues) with steps to reproduce or your use case.
-2. For PRs, please keep the change focused — one feature or fix per PR.
-3. Theme PRs only need to touch `static/css/theme.*.css` and (optionally) add a background to `static/images/`.
+- 🐛 **Bug 报告**：请在 [Issues](https://github.com/shitianyaa/pixiv-toolbox/issues) 中描述复现步骤
+- 💡 **功能建议**：欢迎在 Issues 中提出你的想法
+- 🎨 **主题贡献**：PRs 只需修改 `static/css/theme.*.css` 并可选添加背景图到 `static/images/`
+- 🔧 **代码贡献**：请保持 PR 聚焦，每个 PR 只包含一个功能或修复
 
 ## ⚠️ Notes
 

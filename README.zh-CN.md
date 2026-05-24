@@ -30,14 +30,14 @@
 
 #### 为什么用它（相比其他 Pixiv 下载器）
 
-- **颜值在线** —— 默认蔚蓝档案 (Blue Archive) 主题，自带 Arona 立绘背景与樱花配色，自定义 canvas 动效，告别朴素 UI。
+- **颜值在线** —— 默认蔚蓝档案 (Blue Archive) 主题，自带 Arona 立绘背景与蓝青色调，自定义 canvas 动效，告别朴素 UI。
 - **一站式工作流** —— 登录、自检、搜索、下载全在一个页面内完成，无需在命令行和脚本间来回复制 token。
 - **网络零配置** —— Clash / V2Ray / Shadowsocks 等本地代理端口自动检测，HTTP / SOCKS4 / SOCKS5 通吃。
 
 ## ✨ 功能特性
 
 - 🔐 **一键获取 Token** —— 调用 Playwright 自动打开浏览器登录 Pixiv，截取 OAuth `refresh_token`；遇到人机验证码可手动处理。
-- 🎌 **二次元主题 UI** —— 默认蔚蓝档案风格，自带樱花备用主题、canvas 星空动效、中日双语字体排版。
+- 🎌 **二次元主题 UI** —— 默认蔚蓝档案风格，canvas 星空动效、中日双语字体排版。
 - 🔍 **强大的标签检索** —— 支持日期范围、排行榜模式、排序方式、最低收藏数、R-18 开关等过滤条件。
 - 🖼️ **图卡 / 列表双预览** —— 一键切换图卡瀑布流与结构化列表视图。
 - 📥 **多画质下载** —— 原图 / 大图 / 中图自由选择，默认保存到 `downloads/` 目录。
@@ -129,24 +129,22 @@ pixiv-toolbox/
 | Pixiv API | [pixivpy-async](https://github.com/Mikubill/pixivpy-async) |
 | 浏览器自动化 | [Playwright](https://playwright.dev/python/) |
 | 前端 | 原生 HTML / CSS / JavaScript (ES Modules) + Noto Sans SC + Outfit |
-| 主题系统 | CSS 自定义属性，主题可热切换 (`theme.ba.css`、`theme.sakura.css`) |
+| 主题系统 | CSS 自定义属性 (`theme.ba.css`) |
 
 ## 🎨 主题
 
-目前内置 **两套主题**：
+默认使用 **Blue Archive** 风格主题 —— Arona 背景图，蓝青色调，日文汉字装饰。
 
-- **Blue Archive（默认）** —— Arona 背景图，蓝青色调，日文汉字装饰
-- **樱花 (Sakura)** —— 粉色与米色配色，适合日间使用
-
-主题就是 `static/css/` 下的纯 CSS 文件。欢迎贡献新主题（原神、星穹铁道、明日方舟…）。
+主题定义在 `static/css/theme.ba.css`。欢迎贡献新主题（原神、星穹铁道、明日方舟…）。
 
 ## 🤝 参与贡献
 
-Issue、PR、主题贡献都欢迎：
+**欢迎提交 Issue 和 Pull Request！** 无论是 Bug 反馈、功能建议还是主题贡献，都非常欢迎。
 
-1. 发现 Bug 或有功能想法，请先开 [Issue](https://github.com/shitianyaa/pixiv-toolbox/issues) 描述复现步骤或使用场景。
-2. 提 PR 请保持改动聚焦，一个 PR 一个功能/修复。
-3. 主题 PR 只需修改 `static/css/theme.*.css` 并（可选）在 `static/images/` 添加背景图。
+- 🐛 **Bug 报告**：请在 [Issues](https://github.com/shitianyaa/pixiv-toolbox/issues) 中描述复现步骤
+- 💡 **功能建议**：欢迎在 Issues 中提出你的想法
+- 🎨 **主题贡献**：PRs 只需修改 `static/css/theme.*.css` 并可选添加背景图到 `static/images/`
+- 🔧 **代码贡献**：请保持 PR 聚焦，每个 PR 只包含一个功能或修复
 
 ## 💬 反馈与交流
 
