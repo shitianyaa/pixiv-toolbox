@@ -67,7 +67,7 @@ def index():
 if __name__ == "__main__":
     port = 5000
     url = f"http://127.0.0.1:{port}"
-    print(f"🌐 蔚蓝 Pixiv 工具箱已启动: {url}")
+    print(f"🌐 Pixiv Toolbox 已启动: {url}")
     from pathlib import Path
 
     print(f"   下载目录: {Path(__file__).resolve().parent / 'downloads'}")
